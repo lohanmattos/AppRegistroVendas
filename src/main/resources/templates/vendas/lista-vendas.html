@@ -1,87 +1,54 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <head>
-    <title>Dashboard de Vendas</title>
-    <!-- Inclusão do CSS do Bootstrap -->
-    <link rel="stylesheet" href="bootstrap-5.3.3/css/bootstrap.min.css">
+    <title>Lista de Vendas</title>
+    <!-- CSS do Bootstrap via CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
 </head>
 <body>
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">Registro de Vendas</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="/produtos">Produtos</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/vendas">Vendas</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/voluntarios">Voluntários</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<!-- Barra de Navegação -->
+<div th:insert="~{fragments/navbar :: navbar}"></div>
 
-<!-- Conteúdo Principal -->
 <div class="container mt-4">
-    <!-- Cards de Resumo -->
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card text-white bg-primary mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Vendas</h5>
-                    <p class="card-text h4" th:text="${totalVendas}">R$ 0,00</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-danger mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Despesas</h5>
-                    <p class="card-text h4" th:text="${despesas}">R$ 0,00</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-success mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Lucro</h5>
-                    <p class="card-text h4" th:text="${lucro}">R$ 0,00</p>
-                </div>
-            </div>
-        </div>
+
+    <!-- Título e Botão -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Vendas</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#vendaModal" onclick="novaVenda()">Nova Venda</button>
     </div>
 
-    <!-- Tabela de Últimas Vendas -->
+    <!-- Tabela de Vendas -->
     <div class="card">
         <div class="card-header bg-secondary text-white">
-            Últimas Vendas
+            Vendas Realizadas
         </div>
         <div class="card-body">
             <table class="table table-striped">
                 <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Produto</th>
+                    <th>Voluntário</th>
                     <th>Quantidade</th>
                     <th>Total</th>
                     <th>Data</th>
-                    <th>Voluntário</th>
+                    <th>Ações</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="venda : ${ultimasVendas}">
-                    <td th:text="${venda.produto.nome}">Produto</td>
-                    <td th:text="${venda.quantidade}">0</td>
-                    <td th:text="${venda.total}">R$ 0,00</td>
-                    <td th:text="${#dates.format(venda.dataHora, 'dd/MM/yyyy HH:mm')}">00/00/0000</td>
-                    <td th:text="${venda.voluntario.nome}">Voluntário</td>
+                <tr th:each="venda : ${vendas}">
+                    <td th:text="${venda.id}"></td>
+                    <td th:text="${venda.produto.nome}"></td>
+                    <td th:text="${venda.voluntario.nome}"></td>
+                    <td th:text="${venda.quantidade}"></td>
+                    <td th:text="|R$ ${#numbers.formatDecimal(venda.total, 2, 2)}|"></td>
+                    <td th:text="${venda.dataHora}"></td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#vendaModal"
+                                th:onclick="'editarVenda(' + ${venda.id} + ')'">Editar</button>
+                        <a th:href="@{/vendas/{id}/excluir(id=${venda.id})}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Tem certeza que deseja excluir esta venda?')">Excluir</a>
+                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -89,12 +56,45 @@
     </div>
 </div>
 
-<!-- Footer -->
-<footer class="bg-dark text-white text-center py-3 fixed-bottom">
-    <p>&copy; 2024 Registro de Vendas. Todos os direitos reservados.</p>
-</footer>
+<!-- Modal -->
+<div class="modal fade" id="vendaModal" tabindex="-1" aria-labelledby="vendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="vendaForm" th:action="@{/vendas}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vendaModalLabel">Nova Venda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="id" name="id" />
+                    <div class="mb-3">
+                        <label for="produto" class="form-label">Produto:</label>
+                        <select id="produto" name="produto.id" class="form-control" th:field="*{produto.id}">
+                            <option th:each="produto : ${produtos}" th:value="${produto.id}" th:text="${produto.nome}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="voluntario" class="form-label">Voluntário:</label>
+                        <select id="voluntario" name="voluntario.id" class="form-control" th:field="*{voluntario.id}">
+                            <option th:each="voluntario : ${voluntarios}" th:value="${voluntario.id}" th:text="${voluntario.nome}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade" class="form-label">Quantidade:</label>
+                        <input type="number" id="quantidade" name="quantidade" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-<!-- Inclusão do JS do Bootstrap -->
-<script src="bootstrap-5.3.3/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
