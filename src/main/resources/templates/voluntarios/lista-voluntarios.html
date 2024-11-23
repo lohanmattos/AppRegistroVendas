@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lista de Voluntários</title>
+    <link rel="stylesheet" href="/bootstrap-5.3.3/css/bootstrap.min.css">
+</head>
+<body>
+<!-- Barra de Navegação -->
+<div th:insert="~{fragments/navbar :: navbar}"></div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Lista de Voluntários</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#voluntarioModal" onclick="novoVoluntario()">Novo Voluntário</button>
+    </div>
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            Voluntários Cadastrados
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Celular</th>
+                    <th>Ações</th>
+
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="voluntario : ${voluntarios}">
+                    <td th:text="${voluntario.id}"></td>
+                    <td th:text="${voluntario.nome}"></td>
+                    <td th:text="${voluntario.celular}"></td> <!-- Exibe o celular -->
+
+                    <td>
+                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#voluntarioModal"
+                                th:onclick="'editarVoluntario(' + ${voluntario.id} + ')'">Editar</button>
+                        <a th:href="@{/voluntarios/{id}/excluir(id=${voluntario.id})}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Tem certeza que deseja excluir este voluntário?')">Excluir</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="voluntarioModal" tabindex="-1" aria-labelledby="voluntarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="voluntarioForm" th:action="@{/voluntarios}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="voluntarioModalLabel">Novo Voluntário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="id" name="id" />
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome:</label>
+                        <input type="text" id="nome" name="nome" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="celular" class="form-label">Celular:</label>
+                        <input type="text" id="celular" name="celular" class="form-control" placeholder="+55 11 98765-4321" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Scripts do Bootstrap -->
+<script src="bootstrap-5.3.3/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function novoVoluntario() {
+        document.getElementById("voluntarioModalLabel").textContent = "Novo Voluntário";
+        document.getElementById("id").value = "";
+        document.getElementById("nome").value = "";
+        document.getElementById("celular").value = "";
+    }
+    function editarVoluntario(id) {
+        fetch(`/voluntarios/${id}/editar`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("voluntarioModalLabel").textContent = "Editar Voluntário";
+                document.getElementById("id").value = data.id;
+                document.getElementById("nome").value = data.nome;
+                document.getElementById("celular").value = data.celular;
+            })
+            .catch(error => console.error("Erro ao buscar voluntário:", error));
+    }
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+</body>
+</html>
